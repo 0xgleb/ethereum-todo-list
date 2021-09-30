@@ -1,11 +1,11 @@
 import React, { Component } from "react";
-import SimpleStorageContract from "./contracts/SimpleStorage.json";
+import TodoListContract from "./contracts/TodoList.json";
 import getWeb3 from "./getWeb3";
 
 import "./App.css";
 
 class App extends Component {
-  state = { storageValue: 0, web3: null, accounts: null, contract: null };
+  state = { taskCount: 0, web3: null, accounts: null, contract: null, tasks: [] };
 
   componentDidMount = async () => {
     try {
@@ -17,9 +17,9 @@ class App extends Component {
 
       // Get the contract instance.
       const networkId = await web3.eth.net.getId();
-      const deployedNetwork = SimpleStorageContract.networks[networkId];
+      const deployedNetwork = TodoListContract.networks[networkId];
       const instance = new web3.eth.Contract(
-        SimpleStorageContract.abi,
+        TodoListContract.abi,
         deployedNetwork && deployedNetwork.address,
       );
 
@@ -36,35 +36,36 @@ class App extends Component {
   };
 
   runExample = async () => {
-    const { accounts, contract } = this.state;
+    const { contract } = this.state;
 
-    // Stores a given value, 5 by default.
-    await contract.methods.set(5).send({ from: accounts[0] });
+    // await contract.methods.createTask("Figure out Web3 FE").send({ from: accounts[0] });
 
     // Get the value from the contract to prove it worked.
-    const response = await contract.methods.get().call();
+    const response = await contract.methods.taskCount().call();
+
+    const task1 = await contract.methods.tasks(1).call();
+
+    console.log(task1);
 
     // Update state with the result.
-    this.setState({ storageValue: response });
+    this.setState({ taskCount: response, tasks: [task1] });
   };
 
   render() {
     if (!this.state.web3) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
+
+    console.log(this.state.tasks);
+
     return (
       <div className="App">
-        <h1>Good to Go!</h1>
-        <p>Your Truffle Box is installed and ready.</p>
-        <h2>Smart Contract Example</h2>
-        <p>
-          If your contracts compiled and migrated successfully, below will show
-          a stored value of 5 (by default).
-        </p>
-        <p>
-          Try changing the value stored on <strong>line 42</strong> of App.js.
-        </p>
-        <div>The stored value is: {this.state.storageValue}</div>
+        <h1>Ethereum Todo List</h1>
+        <div>Total number of tasks: {this.state.taskCount}</div>
+        <h2>Todos:</h2>
+        <ul>
+          {this.state.tasks.map(task => <li key={task.id}>{task.content}</li>)}
+        </ul>
       </div>
     );
   }
