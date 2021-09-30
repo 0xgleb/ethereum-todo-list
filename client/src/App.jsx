@@ -36,19 +36,22 @@ class App extends Component {
   };
 
   runExample = async () => {
-    const { contract } = this.state;
+    const { taskCount, contract } = this.state;
 
     // await contract.methods.createTask("Figure out Web3 FE").send({ from: accounts[0] });
 
     // Get the value from the contract to prove it worked.
-    const response = await contract.methods.taskCount().call();
+    const newTaskCount = await contract.methods.taskCount().call();
 
-    const task1 = await contract.methods.tasks(1).call();
+    let tasks = [];
 
-    console.log(task1);
+    for (let i = taskCount + 1; i <= newTaskCount; i++) {
+        const newTask = await contract.methods.tasks(i).call();
+        tasks.push(newTask);
+    }
 
     // Update state with the result.
-    this.setState({ taskCount: response, tasks: [task1] });
+    this.setState({ taskCount: newTaskCount, tasks });
   };
 
   render() {
