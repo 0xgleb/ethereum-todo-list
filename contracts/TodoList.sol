@@ -10,11 +10,14 @@ contract TodoList {
     struct Task {
         uint id;
         string content;
-        bool isDone;
+        bool completed;
     }
 
     // "mapping" is like an associative array or Map in Haskell
     mapping(uint => Task) public tasks;
+
+    // Create an event so that consumers can subscribe to it
+    event TaskCreated(uint id, string content, bool completed);
 
     constructor() public {
         createTask("Write your first Ethereum smart contract");
@@ -24,5 +27,7 @@ contract TodoList {
         taskCount++;
 
         tasks[taskCount] = Task(taskCount, _content, false);
+
+        emit TaskCreated(taskCount, _content, false);
     }
 }
