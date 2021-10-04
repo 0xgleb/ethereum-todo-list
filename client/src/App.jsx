@@ -48,15 +48,10 @@ class App extends Component {
         // Get the value from the contract to prove it worked.
         const newTaskCount = await contract.methods.taskCount().call();
 
-        console.log(taskCount);
-        console.log(newTaskCount);
-
         for (let i = taskCount + 1; i <= newTaskCount; i++) {
             const newTask = await contract.methods.tasks(i).call();
-            tasks.push(newTask);
+            tasks[i-1] = newTask;
         }
-
-        console.log(tasks);
 
         // Update state with the result.
         this.setState({ taskCount: newTaskCount, tasks });
@@ -69,11 +64,35 @@ class App extends Component {
 
         const { contract, accounts, tasks } = this.state;
 
-        const response = await contract.methods.createTask(this.state.newTaskContent).send({ from: accounts[0] });
+        const newTask = await contract.methods.createTask(
+            this.state.newTaskContent
+        ).send({
+            from: accounts[0]
+        }).then(response =>
+            response.events.TaskCreated.returnValues
+        );
 
-        tasks.push(response.events.TaskCreated.returnValues);
+        tasks[parseInt(newTask.id) - 1] = newTask;
 
-        this.setState({ newTaskContent: '', tasks });
+        const taskCount = await contract.methods.taskCount().call();
+
+        this.setState({ newTaskContent: '', tasks, taskCount });
+    };
+
+    toggleCompletion = task => async event => {
+        const { contract, accounts, tasks } = this.state;
+
+        const updatedTask = await contract.methods.completeTask(task.id).send({
+            from: accounts[0]
+        }).then(response =>
+            response.events.TaskCompleted.returnValues
+        );
+
+        console.log(tasks);
+
+        tasks[parseInt(task.id) - 1] = updatedTask;
+
+        this.setState({ tasks });
     };
 
     render() {
@@ -91,7 +110,12 @@ class App extends Component {
             </form>
             <h2>Todos:</h2>
             <ul>
-            {this.state.tasks.map(task => <li key={task.id}>{task.content}</li>)}
+              {this.state.tasks.map(task =>
+                  <li key={task.id}>
+                    <input type="checkbox" checked={task.completed} onChange={this.toggleCompletion(task)}/>
+                    {task.content}
+                  </li>
+              )}
             </ul>
         </div>
         );
